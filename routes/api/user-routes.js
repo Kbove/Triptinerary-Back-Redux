@@ -15,7 +15,6 @@ router.get('/', (req, res) => {
 })
 
 router.post('/signup', ({body}, res) => {
-    console.log('does this log')
     try {
         User.create(body)
         .then(data => {
@@ -23,13 +22,31 @@ router.post('/signup', ({body}, res) => {
                 return res.status(400).json({message: 'Invalid user data'})
             }
             const token = signToken(data)
-            console.log("token", token)
-            res.json({token, data, newUser})
+            res.json({token, data})
         })
     } catch (err) {
         return res.status(400).json(err)
     }
 })
+
+router.post('/login', authMiddleware, async ({body}, res) => {
+    try {
+        const user = await User.findOne({ $or: [{username: body.username}, {email: body.email}]})
+        if (!user) {
+            return res.status(400).json({message: "Wrong username or password"})
+        }
+        const correctPw = await user.isCorrectPassword(body.password)
+        if (!correctPw) {
+            return res.status(400).json({message: "Wrong username or password"})
+        }
+        const token = signToken(user)
+        res.json({token, user})
+    } catch (err) {
+        return res.status(400).json(err)
+    }
+})
+
+
 
 
 
