@@ -46,8 +46,31 @@ router.post('/login', authMiddleware, async ({body}, res) => {
     }
 })
 
+router.post('/points', authMiddleware, async ({user}, res) => {
+    try {
+        const currentPoints = await User.findOne({_id: user._id})
+        const { points } = currentPoints
+        res.json({ points })
+    } catch (err) {
+        return res.status(400).json(err)
+    }
+})
 
-
-
+router.put('/addPoints', authMiddleware, async ({user}, res) => {
+    try {
+        const currentUser = await User.findOne({_id: user._id})
+        if (!currentUser) {
+            return res.status(400).json({message: 'User not found'})
+        } 
+        let newPoints = currentUser.points += 10
+        await User.findOneAndUpdate(
+            {_id: user._id},
+            {$set: {points: newPoints}}
+        )
+        res.json({ message: 'Points added!'})
+    } catch (err) {
+        return res.status(400).json(err)
+    }
+})
 
 module.exports = router

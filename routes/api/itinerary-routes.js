@@ -12,4 +12,15 @@ router.get('/itineraries', async (req, res) => {
     }
 })
 
+router.post('/searchcity', ({body}, res) => {
+    Itinerary.find({ days: {$elemMatch: {city: body.city}}}).collation({locale: 'en', strength: 2})
+    .then(matchItinerary => {
+        res.json(matchItinerary)
+    }).catch(err => {
+        res.status(400).json(err)
+    })
+})
+
+
+
 module.exports = router
