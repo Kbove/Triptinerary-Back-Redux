@@ -14,20 +14,31 @@ router.get('/', (req, res) => {
         })
 })
 
-router.post('/signup', ({body}, res) => {
+router.post('/me', authMiddleware, ({user}, res) => {
+    User.find({_id: user._id})
+    .then(myData => {
+        res.json(myData)
+    }).catch(err => {
+        console.log(err)
+    })
+})
+
+router.post('/signup', ({ body }, res) => {
     try {
-        User.create(body)
+      User.create(body)
         .then(data => {
-            if (!data) {
-                return res.status(400).json({message: 'Invalid user data'})
-            }
-            const token = signToken(data)
-            res.json({token, data})
+          if (!data) {
+            return res.status(400).json({ message: 'Something is wrong!' });
+          }
+          const token = signToken(data);
+          console.log('token', token)
+          res.json({ token, data });
         })
     } catch (err) {
-        return res.status(400).json(err)
+      console.log(err)
+      return res.status(400).json(err);
     }
-})
+  })
 
 router.post('/login', authMiddleware, async ({body}, res) => {
     try {
