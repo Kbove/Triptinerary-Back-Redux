@@ -84,4 +84,21 @@ router.put('/addPoints', authMiddleware, async ({user}, res) => {
     }
 })
 
+router.put('/rateItinerary', authMiddleware, async ({body}, res) => {
+    const { rating, _id } = body
+    try {
+        const ratingItinerary = await Itinerary.findOne({ _id: body._id})
+        if (!ratingItinerary) {
+            return res.status(400).json({message: 'Itinerary not found'})
+        }
+        const nametest = await Itinerary.findOneAndUpdate(
+            body._id,
+            { $push: {ratings: rating}}
+        )
+        res.json(nametest)
+    } catch (err) {
+        return res.status(400).json(err)
+    }
+})
+
 module.exports = router
