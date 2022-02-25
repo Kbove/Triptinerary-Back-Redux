@@ -84,7 +84,6 @@ router.put('/purchaseItinerary', authMiddleware, async ({user, body}, res) => {
     try {
         const userClient = await User.findOne({_id: user._id})
         const purchasedItinerary = await Itinerary.findOne({_id: body._id})
-
         if (!userClient) {
             return res.status(400).json({message: 'User not found'})
         }
@@ -94,7 +93,7 @@ router.put('/purchaseItinerary', authMiddleware, async ({user, body}, res) => {
 
         let finalPoints = userClient.points - purchasedItinerary.price
         if (finalPoints >= 0) {
-            await User.findOne(
+            await User.findOneAndUpdate(
                 { _id: user._id },
                 { $set: { points: finalPoints }, $addToSet: { purchased_itinerary: purchasedItinerary }}
             )
