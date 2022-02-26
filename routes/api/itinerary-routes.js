@@ -91,7 +91,11 @@ router.put('/purchaseItinerary', authMiddleware, async ({user, body}, res) => {
             return res.status(400).json({message: 'Itinerary not found'})
         } 
 
+        const dupeCheck = await User.findOne(
+            {_id: user._id},
+            {purchased_itinerary: {$elemMatch: {_id: body._id}}})
         let finalPoints = userClient.points - purchasedItinerary.price
+        if (!dupeCheck) {
         if (finalPoints >= 0) {
             await User.findOneAndUpdate(
                 { _id: user._id },
@@ -106,6 +110,9 @@ router.put('/purchaseItinerary', authMiddleware, async ({user, body}, res) => {
             return res.json({message: 'Not enough points'})
         }
         res.json({message: 'Successful transaction'})
+    } else {
+        return res.json({message: 'You already own this itinerary'})
+    }
     } catch (err) {
         return res.status(400).json(err)
     }
