@@ -23,54 +23,54 @@ router.get('/itinerary', async (req, res) => {
     }
 })
 
-router.get('/savedItinerary', authMiddleware, async ({user}, res) => {
+router.get('/savedItinerary', authMiddleware, async ({ user }, res) => {
     try {
-        const userItinerary = await User.findOne({_id: user._id})
+        const userItinerary = await User.findOne({ _id: user._id })
         const { saved_itinerary } = userItinerary
-        const token = jwt.sign({ saved_itinerary }, process.env.TOKEN_SECRET, { expiresIn: '2h'})
+        const token = jwt.sign({ saved_itinerary }, process.env.TOKEN_SECRET, { expiresIn: '2h' })
         res.json({ saved_itinerary })
     } catch (err) {
         return res.status(400).json(err)
     }
 })
 
-router.post('/createItinerary', authMiddleware, async ({user, body}, res) => {
+router.post('/createItinerary', authMiddleware, async ({ user, body }, res) => {
     try {
         const newItinerary = await Itinerary.create(body)
         const updatedUser = await User.findOneAndUpdate(
             { _id: user._id },
-            { $addToSet: {saved_itinerary: newItinerary }},
+            { $addToSet: { saved_itinerary: newItinerary } },
             { new: true, runValidators: true }
         )
-        return res.json({ newItinerary, updatedUser})
+        return res.json({ newItinerary, updatedUser })
     } catch (err) {
         return res.status(400).json(err)
     }
 })
 
-router.post('/purchased', authMiddleware, async ({user}, res) => {
+router.post('/purchased', authMiddleware, async ({ user }, res) => {
     try {
         const itineraries = await User.findOne({ _id: user._id })
         const { purchased_itinerary, saved_itinerary } = itineraries
-        const token = jwt.sign({ saved_itinerary }, process.env.TOKEN_SECRET, {expiresIn: '2h' })
+        const token = jwt.sign({ saved_itinerary }, process.env.TOKEN_SECRET, { expiresIn: '2h' })
         res.json({ purchased_itinerary, saved_itinerary })
     } catch (err) {
         return res.status(400).json(err)
     }
 })
 
-router.post('/searchCity', ({body}, res) => {
-    Itinerary.find({ days: {$elemMatch: {city: body.city}}}).collation({locale: 'en', strength: 2})
-    .then(matchItinerary => {
-        res.json(matchItinerary)
-    }).catch(err => {
-        res.status(400).json(err)
-    })
+router.post('/searchCity', ({ body }, res) => {
+    Itinerary.find({ days: { $elemMatch: { city: body.city } } }).collation({ locale: 'en', strength: 2 })
+        .then(matchItinerary => {
+            res.json(matchItinerary)
+        }).catch(err => {
+            res.status(400).json(err)
+        })
 })
 
 router.post('/itinerary/:id', authMiddleware, async (req, res) => {
     try {
-        const itinerary = await Itinerary.findOne({_id: req.params.id})
+        const itinerary = await Itinerary.findOne({ _id: req.params.id })
         if (!itinerary) {
             return res.status(400).json('No matching itinerary')
         }
@@ -80,39 +80,37 @@ router.post('/itinerary/:id', authMiddleware, async (req, res) => {
     }
 })
 
-router.put('/purchaseItinerary', authMiddleware, async ({user, body}, res) => {
+router.put('/purchaseItinerary', authMiddleware, async ({ user, body }, res) => {
     try {
-        const userClient = await User.findOne({_id: user._id})
-        const purchasedItinerary = await Itinerary.findOne({_id: body._id})
+        const userClient = await User.findOne({ _id: user._id })
+        const purchasedItinerary = await Itinerary.findOne({ _id: body._id })
         if (!userClient) {
-            return res.status(400).json({message: 'User not found'})
+            return res.status(400).json({ message: 'User not found' })
         }
         if (!purchasedItinerary) {
-            return res.status(400).json({message: 'Itinerary not found'})
-        } 
+            return res.status(400).json({ message: 'Itinerary not found' })
+        }
 
         const dupeCheck = await User.findOne(
-            {_id: user._id},
-            {purchased_itinerary: {$elemMatch: {_id: body._id}}})
+            { _id: user._id },
+            { purchased_itinerary: { $elemMatch: { _id: body._id } } })
         let finalPoints = userClient.points - purchasedItinerary.price
         if (!dupeCheck) {
-        if (finalPoints >= 0) {
-            await User.findOneAndUpdate(
-                { _id: user._id },
-                { $set: { points: finalPoints }, $addToSet: { purchased_itinerary: purchasedItinerary }}
-            )
+            if (finalPoints >= 0) {
+                await User.findOneAndUpdate(
+                    { _id: user._id },
+                    { $set: { points: finalPoints }, $addToSet: { purchased_itinerary: purchasedItinerary } }
+                )
 
-            await Itinerary.findOneAndUpdate(
-                { _id: body._id },
-                { $addToSet: { purchaser_ids: user._id }}
-            )
-        } else {
-            return res.json({message: 'Not enough points'})
+                await Itinerary.findOneAndUpdate(
+                    { _id: body._id },
+                    { $addToSet: { purchaser_ids: user._id } }
+                )
+            } else {
+                return res.json({ message: 'Not enough points' })
+            }
+            res.json({ message: 'Successful transaction' })
         }
-        res.json({message: 'Successful transaction'})
-    } else {
-        return res.json({message: 'You already own this itinerary'})
-    }
     } catch (err) {
         return res.status(400).json(err)
     }
