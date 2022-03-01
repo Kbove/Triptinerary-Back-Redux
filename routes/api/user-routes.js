@@ -5,6 +5,7 @@ require('dotenv').config()
 
 const { authMiddleware, signToken } = require('../../utils/auth')
 const auth = require('../../utils/auth')
+const { response } = require('express')
 
 router.get('/', (req, res) => {
         User.find({}).then(userData => {
@@ -86,21 +87,20 @@ router.put('/addPoints', authMiddleware, async ({user}, res) => {
     }
 })
 
-router.put('/rateItinerary', authMiddleware, async ({body}, res) => {
-    const { rating, _id } = body
-    try {
-        const ratingItinerary = await Itinerary.findOne({ _id: body._id})
-        if (!ratingItinerary) {
-            return res.status(400).json({message: 'Itinerary not found'})
-        }
-        const nametest = await Itinerary.findOneAndUpdate(
-            body._id,
-            { $push: {ratings: rating}}
-        )
-        res.json(nametest)
-    } catch (err) {
-        return res.status(400).json(err)
-    }
+//TODO: Users should only be able to rate an itinerary one time, should take in three params: User Id, Itinerary Id, and Rating
+router.put('/rateItinerary', authMiddleware, async (body, res) => {
+  try {
+    const newRating = await Itinerary.findOneAndUpdate(
+      { _id: body.itin_id},
+      {$push: {ratings: {_id: body.user_id, rating: body.rating}}}
+      )
+      if (!newRating) {
+        return res.status(400).json({ message: 'Rating failed'})
+      }
+      res.json({ message: 'Rating added'})
+  } catch (err) {
+    return res.status(400).json(err)
+  }
 })
 
 module.exports = router

@@ -1,5 +1,7 @@
 const { Schema, model } = require('mongoose')
 
+//What would be a better way to store ratings and be able to have them correspond to users 
+
 const ItinerarySchema = new Schema(
     {
         creator: {
@@ -35,8 +37,13 @@ const ItinerarySchema = new Schema(
                 city: String
             }
         ],
-        purchaser_ids: [],
-        ratings: [Number]
+        purchaser_ids: [String],
+        ratings: [
+            {
+                _id: String,
+                rating: Number
+            }
+        ]
     }
 )
 
