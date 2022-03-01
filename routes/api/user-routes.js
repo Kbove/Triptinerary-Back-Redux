@@ -91,7 +91,7 @@ router.put('/addPoints', authMiddleware, async ({user}, res) => {
 router.put('/rateItinerary', authMiddleware, async (body, res) => {
   try {
     const newRating = await Itinerary.findOneAndUpdate(
-      { _id: body.itin_id},
+      { _id: body._id},
       {$push: {ratings: {_id: body.user_id, rating: body.rating}}}
       )
       if (!newRating) {
