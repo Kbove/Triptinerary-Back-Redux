@@ -88,8 +88,14 @@ router.put('/addPoints', authMiddleware, async ({user}, res) => {
 })
 
 //TODO: Users should only be able to rate an itinerary one time, should take in three params: User Id, Itinerary Id, and Rating
-router.put('/rateItinerary', authMiddleware, async (body, res) => {
+router.put('/rateItinerary', authMiddleware, async ({body}, res) => {
   try {
+    console.log('ratingObj', body._id, body.user_id, body.rating)
+    const noDupeRatings = await Itinerary.findOne(
+      { _id: body._id},
+      {ratings: {$elemMatch: {_id: body.user_id}}}
+      )
+    if (!noDupeRatings) {
     const newRating = await Itinerary.findOneAndUpdate(
       { _id: body._id},
       {$push: {ratings: {_id: body.user_id, rating: body.rating}}}
@@ -98,6 +104,9 @@ router.put('/rateItinerary', authMiddleware, async (body, res) => {
         return res.status(400).json({ message: 'Rating failed'})
       }
       res.json({ message: 'Rating added'})
+    } else {
+      return res.status(400).json(err)
+    }
   } catch (err) {
     return res.status(400).json(err)
   }
