@@ -60,13 +60,33 @@ router.post('/purchased', authMiddleware, async ({ user }, res) => {
     }
 })
 
-router.post('/searchCity', ({ body }, res) => {
-    Itinerary.find({ days: { $elemMatch: { city: body.city } } }).collation({ locale: 'en', strength: 2 })
-        .then(matchItinerary => {
-            res.json(matchItinerary)
-        }).catch(err => {
-            res.status(400).json(err)
-        })
+router.post('/searchCity', async ({ body }, res) => {
+    // Itinerary.find({ days: { $elemMatch: { city: body.city } } }).collation({ locale: 'en', strength: 2 })
+    //   .then(matchItinerary => {
+    //     console.log(matchItinerary)
+    //     res.json(matchItinerary)
+    //   }).catch(err => {
+    //     console.log(err)
+    //     res.status(400).json(err)
+    //   })
+    try {
+        const itinData = await Itinerary.find({})
+        if (!itinData) {
+            return res.status(400).json('No itins foudn')
+        }
+        console.log(itinData[0].days[0].city.toUpperCase())
+        let searchArr = []
+        for (let i = 0; i < itinData.length; i++) {
+            let searchCity = body.city.toUpperCase()
+            if (itinData[i].days[0].city.toUpperCase().indexOf(searchCity) !== -1) {
+                searchArr.push(itinData[i])
+            }
+        }
+        console.log(searchArr)
+        res.json({ searchArr })
+    } catch (err) {
+        res.status(400).json(err)
+    }
 })
 
 router.post('/itinerary/:id', authMiddleware, async (req, res) => {
@@ -93,8 +113,8 @@ router.put('/purchaseItinerary', authMiddleware, async ({ user, body }, res) => 
         }
 
         const dupeCheck = await Itinerary.findOne({ _id: body._id })
-        if (dupeCheck.purchaser_ids.indexOf(user._id) === -1) {        
-        let finalPoints = userClient.points - purchasedItinerary.price
+        if (dupeCheck.purchaser_ids.indexOf(user._id) === -1) {
+            let finalPoints = userClient.points - purchasedItinerary.price
             if (finalPoints >= 0) {
                 await User.findOneAndUpdate(
                     { _id: user._id },
@@ -110,7 +130,7 @@ router.put('/purchaseItinerary', authMiddleware, async ({ user, body }, res) => 
             }
             return res.json({ message: 'Successful transaction' })
         } else {
-            return res.status(400).json({ message: 'You already own this'})
+            return res.status(400).json({ message: 'You already own this' })
         }
     } catch (err) {
         return res.status(400).json(err)
