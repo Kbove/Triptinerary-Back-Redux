@@ -34,6 +34,7 @@ router.get('/savedItinerary', authMiddleware, async ({ user }, res) => {
     }
 })
 
+
 router.post('/createItinerary', authMiddleware, async ({ user, body }, res) => {
     try {
         const newItinerary = await Itinerary.create(body)
